@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -98,6 +98,15 @@ test('allows only the exact Codex main-page CDP target', () => {
   assert.equal(isCodexTarget({ type: 'page', url: 'app://-/index.html?initialRoute=%2Favatar-overlay', webSocketDebuggerUrl: 'ws://overlay' }), false);
   assert.equal(isCodexTarget({ type: 'webview', url: 'https://chatgpt.com/', webSocketDebuggerUrl: 'ws://webview' }), false);
   assert.equal(isCodexTarget({ type: 'page', url: 'https://token.woa.com/', webSocketDebuggerUrl: 'ws://token' }), false);
+});
+
+test('launcher confirms before restarting an already-running Codex instance', () => {
+  const launcher = readFileSync(new URL('../scripts/launch-codex-with-skin.ps1', import.meta.url), 'utf8');
+  const installer = readFileSync(new URL('../install.ps1', import.meta.url), 'utf8');
+  assert.match(launcher, /MessageBoxButton\]::YesNo/);
+  assert.match(launcher, /Stop-Process -Id/);
+  assert.match(launcher, /--remote-debugging-address=127\.0\.0\.1/);
+  assert.match(installer, /-WindowStyle Hidden/);
 });
 
 test('rejects paths outside the selected project directory', () => {

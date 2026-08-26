@@ -33,6 +33,8 @@ $p = Join-Path $env:TEMP 'install-codex-wallpaper-skin.ps1'; Invoke-WebRequest '
 
 安装器会自动下载或更新仓库、注册 Codex 个人 marketplace、安装插件，并在桌面和开始菜单创建 `Codex Wallpaper Skin` 快捷方式。以后再次运行同一条命令就是升级。
 
+如果点击快捷方式时普通 Codex 已经在运行，启动器会询问是否自动重启并启用皮肤；它不会再闪退或静默失败。选择“否”不会影响当前任务。
+
 安装完成后：
 
 1. 关闭所有 Codex 窗口。

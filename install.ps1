@@ -108,7 +108,7 @@ function Install-CodexSkinShortcuts {
   foreach ($shortcutPath in $shortcutPaths) {
     $shortcut = $shell.CreateShortcut($shortcutPath)
     $shortcut.TargetPath = 'powershell.exe'
-    $shortcut.Arguments = "-NoLogo -NoProfile -ExecutionPolicy Bypass -File `"$stableLauncher`""
+    $shortcut.Arguments = "-NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$stableLauncher`""
     $shortcut.WorkingDirectory = $stableRoot
     $shortcut.IconLocation = "$codexExe,0"
     $shortcut.Description = 'Launch Codex and restore the Wallpaper Engine skin'

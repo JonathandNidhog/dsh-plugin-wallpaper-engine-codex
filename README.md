@@ -33,6 +33,8 @@ $p = Join-Path $env:TEMP 'install-codex-wallpaper-skin.ps1'; Invoke-WebRequest '
 
 The installer downloads or updates the repository, registers the personal Codex marketplace entry, installs the plugin, and creates a `Codex Wallpaper Skin` shortcut on the desktop and Start menu. Run the same command again later to update.
 
+If regular Codex is already running, the shortcut asks whether to restart it with skin support. It no longer closes silently; choosing No leaves the current task untouched.
+
 After installation:
 
 1. Close every Codex window.

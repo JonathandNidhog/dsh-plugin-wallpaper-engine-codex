@@ -2,13 +2,35 @@ import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
-import { extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { enumerateWallpaperSources } from './wallpaper-engine.mjs';
 
 const DEFAULT_CDP_PORT = Number(process.env.CODEX_SKIN_CDP_PORT || 9222);
 const LAYER_ID = 'codex-wallpaper-engine-skin';
+const DEFAULT_STATE_FILE = join(process.env.LOCALAPPDATA || tmpdir(), 'CodexWallpaperEngineSkin', 'state.json');
+
+export function readSavedSkinState(file = DEFAULT_STATE_FILE) {
+  try {
+    const value = JSON.parse(readFileSync(file, 'utf8'));
+    if (!value || value.enabled !== true || typeof value.id !== 'string') return null;
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+export function writeSavedSkinState(value, file = DEFAULT_STATE_FILE) {
+  mkdirSync(dirname(file), { recursive: true });
+  const partial = `${file}.${process.pid}.partial`;
+  writeFileSync(partial, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+  renameSync(partial, file);
+}
+
+export function clearSavedSkinState(file = DEFAULT_STATE_FILE) {
+  rmSync(file, { force: true });
+}
 
 const MIME = {
   '.mp4': 'video/mp4', '.webm': 'video/webm', '.mkv': 'video/x-matroska',
@@ -415,6 +437,17 @@ export function makeInjectionScript({ mediaUrl, mediaFrames = [], frameDelayMs =
         });
         sourceRow.append(sourceLabel, source); panel.appendChild(sourceRow);
       }
+      const persistSettings = () => {
+        if (typeof window.codexSkinCommand !== 'function') return;
+        window.codexSkinCommand(JSON.stringify({
+          action: 'settings',
+          settings: {
+            panelOpacity: cfg.panelOpacity, scrimOpacity: cfg.scrimOpacity,
+            blurPx: cfg.blurPx, fitMode: cfg.fitMode, zoom: cfg.zoom,
+            positionX: cfg.positionX, positionY: cfg.positionY
+          }
+        }));
+      };
       playbackStatus = document.createElement('div');
       playbackStatus.textContent = cfg.mode === 'video-blob' ? '等待加载原视频…' : (cfg.mode === 'video' ? '原视频播放中 · 离开 Codex 自动暂停' : '预览动画模式 · 离开 Codex 自动暂停');
       playbackStatus.style.cssText = 'margin:6px 0 10px;color:#aeb7c6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
@@ -443,16 +476,16 @@ export function makeInjectionScript({ mediaUrl, mediaFrames = [], frameDelayMs =
       const fit = document.createElement('select');
       fit.style.cssText = 'background:#24272d;color:#fff;border:1px solid #4a4f58;border-radius:6px;padding:4px';
       [['cover','铺满裁切'],['contain','完整显示'],['fill','拉伸铺满']].forEach(([value,text]) => { const option = document.createElement('option'); option.value = value; option.textContent = text; option.selected = value === cfg.fitMode; fit.appendChild(option); });
-      fit.addEventListener('change', () => { media.style.objectFit = fit.value; });
+      fit.addEventListener('change', () => { cfg.fitMode = fit.value; media.style.objectFit = fit.value; persistSettings(); });
       fitRow.append(fitLabel, fit); panel.appendChild(fitRow);
-      addRange('缩放 %', 50, 200, 1, cfg.zoom, value => { media.style.transform = 'scale(' + (value / 100) + ')'; });
+      addRange('缩放 %', 50, 200, 1, cfg.zoom, value => { cfg.zoom = value; media.style.transform = 'scale(' + (value / 100) + ')'; persistSettings(); });
       let x = cfg.positionX, y = cfg.positionY;
       const applyPosition = () => { media.style.objectPosition = x + '% ' + y + '%'; };
-      addRange('水平位置', 0, 100, 1, x, value => { x = value; applyPosition(); });
-      addRange('垂直位置', 0, 100, 1, y, value => { y = value; applyPosition(); });
-      addRange('面板透明', 10, 100, 1, Math.round(cfg.panelOpacity * 100), value => rootStyle.setProperty('--codex-skin-panel-opacity', value / 100));
-      addRange('背景遮罩', 0, 80, 1, Math.round(cfg.scrimOpacity * 100), value => { scrim.style.background = 'rgba(0,0,0,' + (value / 100) + ')'; });
-      addRange('背景模糊', 0, 40, 1, cfg.blurPx, value => rootStyle.setProperty('--codex-skin-blur', value + 'px'));
+      addRange('水平位置', 0, 100, 1, x, value => { x = value; cfg.positionX = value; applyPosition(); persistSettings(); });
+      addRange('垂直位置', 0, 100, 1, y, value => { y = value; cfg.positionY = value; applyPosition(); persistSettings(); });
+      addRange('面板透明', 10, 100, 1, Math.round(cfg.panelOpacity * 100), value => { cfg.panelOpacity = value / 100; rootStyle.setProperty('--codex-skin-panel-opacity', cfg.panelOpacity); persistSettings(); });
+      addRange('背景遮罩', 0, 80, 1, Math.round(cfg.scrimOpacity * 100), value => { cfg.scrimOpacity = value / 100; scrim.style.background = 'rgba(0,0,0,' + cfg.scrimOpacity + ')'; persistSettings(); });
+      addRange('背景模糊', 0, 40, 1, cfg.blurPx, value => { cfg.blurPx = value; rootStyle.setProperty('--codex-skin-blur', value + 'px'); persistSettings(); });
       toggle.addEventListener('click', () => {
         window.__codexWallpaperControlsOpen = panel.style.display === 'none';
         panel.style.display = window.__codexWallpaperControlsOpen ? 'block' : 'none';
@@ -520,13 +553,59 @@ export function buildNativeThemeString({ variant = 'dark', accent = '#339CFF', s
 }
 
 export class CodexSkinBridge {
-  constructor({ cdpPort = DEFAULT_CDP_PORT } = {}) {
+  constructor({ cdpPort = DEFAULT_CDP_PORT, stateFile = DEFAULT_STATE_FILE, restoreIntervalMs = 3000 } = {}) {
     this.cdpPort = cdpPort;
+    this.stateFile = stateFile;
     this.clients = new Map();
     this.active = null;
     this.watchdog = null;
     this.streamGeneration = 0;
     this.selectionTask = Promise.resolve();
+    this.saved = readSavedSkinState(this.stateFile);
+    this.restoreInFlight = false;
+    this.lastRestoreError = null;
+    this.restoreWatchdog = setInterval(() => this.restoreSaved().catch(() => {}), restoreIntervalMs);
+    this.restoreWatchdog.unref();
+    setTimeout(() => this.restoreSaved().catch(() => {}), 0).unref();
+  }
+
+  savedSettings() {
+    return this.active ? {
+      id: this.active.currentId,
+      panelOpacity: this.active.panelOpacity,
+      scrimOpacity: this.active.scrimOpacity,
+      blurPx: this.active.blurPx,
+      muted: this.active.muted,
+      fitMode: this.active.fitMode,
+      zoom: this.active.zoom,
+      positionX: this.active.positionX,
+      positionY: this.active.positionY,
+      showControls: this.active.showControls,
+    } : null;
+  }
+
+  persistActive() {
+    const settings = this.savedSettings();
+    if (!settings) return;
+    this.saved = { enabled: true, ...settings, updatedAt: new Date().toISOString() };
+    writeSavedSkinState(this.saved, this.stateFile);
+  }
+
+  async restoreSaved() {
+    if (this.active || !this.saved || this.restoreInFlight) return false;
+    this.restoreInFlight = true;
+    try {
+      const debug = await this.debugStatus();
+      if (!debug.available) return false;
+      await this.apply(this.saved);
+      this.lastRestoreError = null;
+      return true;
+    } catch (error) {
+      this.lastRestoreError = error instanceof Error ? error.message : String(error);
+      return false;
+    } finally {
+      this.restoreInFlight = false;
+    }
   }
 
   async debugStatus() {
@@ -560,6 +639,18 @@ export class CodexSkinBridge {
     if (message.method !== 'Runtime.bindingCalled' || message.params?.name !== 'codexSkinCommand') return;
     let command;
     try { command = JSON.parse(message.params.payload); } catch { return; }
+    if (command?.action === 'settings' && this.active && command.settings && typeof command.settings === 'object') {
+      const settings = command.settings;
+      if (Number.isFinite(settings.panelOpacity)) this.active.panelOpacity = Math.max(0.1, Math.min(1, settings.panelOpacity));
+      if (Number.isFinite(settings.scrimOpacity)) this.active.scrimOpacity = Math.max(0, Math.min(0.8, settings.scrimOpacity));
+      if (Number.isFinite(settings.blurPx)) this.active.blurPx = Math.max(0, Math.min(40, Math.round(settings.blurPx)));
+      if (['cover', 'contain', 'fill'].includes(settings.fitMode)) this.active.fitMode = settings.fitMode;
+      if (Number.isFinite(settings.zoom)) this.active.zoom = Math.max(50, Math.min(200, Math.round(settings.zoom)));
+      if (Number.isFinite(settings.positionX)) this.active.positionX = Math.max(0, Math.min(100, Math.round(settings.positionX)));
+      if (Number.isFinite(settings.positionY)) this.active.positionY = Math.max(0, Math.min(100, Math.round(settings.positionY)));
+      this.persistActive();
+      return;
+    }
     if (command?.action !== 'select' || typeof command.id !== 'string') return;
     const previous = this.active;
     const settings = previous ? {
@@ -652,7 +743,14 @@ export class CodexSkinBridge {
       currentId: project.id,
     };
     const generation = ++this.streamGeneration;
-    const targets = await this.injectCurrent();
+    let targets;
+    try {
+      targets = await this.injectCurrent();
+    } catch (error) {
+      this.active = null;
+      throw error;
+    }
+    this.persistActive();
     if (selected.mode === 'video-blob') {
       this.streamVideoToClients(selected.videoPath, selected.videoBytes, generation)
         .catch((error) => this.reportVideoError(error));
@@ -703,9 +801,22 @@ export class CodexSkinBridge {
     }
     this.clients.clear();
     this.active = null;
+    this.saved = null;
+    this.lastRestoreError = null;
+    clearSavedSkinState(this.stateFile);
     if (this.watchdog) clearInterval(this.watchdog);
     this.watchdog = null;
     return { removed: true, targetCount: removed.length };
+  }
+
+  disconnect() {
+    this.streamGeneration++;
+    for (const client of this.clients.values()) client.close();
+    this.clients.clear();
+    if (this.watchdog) clearInterval(this.watchdog);
+    this.watchdog = null;
+    if (this.restoreWatchdog) clearInterval(this.restoreWatchdog);
+    this.restoreWatchdog = null;
   }
 
   async status() {
@@ -721,6 +832,14 @@ export class CodexSkinBridge {
       positionY: this.active.positionY,
       showControls: this.active.showControls,
     } : null;
-    return { debug: await this.debugStatus(), active, connectedTargets: this.clients.size };
+    return {
+      debug: await this.debugStatus(), active, connectedTargets: this.clients.size,
+      persistence: {
+        enabled: Boolean(this.saved),
+        selectedId: this.saved?.id || null,
+        autoRestorePending: Boolean(this.saved && !this.active),
+        lastRestoreError: this.lastRestoreError,
+      },
+    };
   }
 }

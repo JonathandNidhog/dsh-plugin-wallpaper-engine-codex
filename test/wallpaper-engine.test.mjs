@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { buildNativeThemeString, isCodexTarget, isPathInside, makeInjectionScript, selectEmbeddableMedia } from '../src/codex-skin.mjs';
+import { buildNativeThemeString, clearSavedSkinState, CodexSkinBridge, isCodexTarget, isPathInside, makeInjectionScript, readSavedSkinState, selectEmbeddableMedia, writeSavedSkinState } from '../src/codex-skin.mjs';
 import { enumerateWallpaperSources, librariesFromVdfText, readProject } from '../src/wallpaper-engine.mjs';
 
 test('parses the Steam library that owns Wallpaper Engine', () => {
@@ -90,6 +90,7 @@ test('builds full-video transfer and video-selection controls', () => {
   assert.match(script, /document\.hasFocus/);
   assert.match(script, /visibilitychange/);
   assert.match(script, /已暂停（Codex 未激活）/);
+  assert.match(script, /action: 'settings'/);
 });
 
 test('allows only the exact Codex main-page CDP target', () => {
@@ -103,6 +104,36 @@ test('rejects paths outside the selected project directory', () => {
   const root = resolve('project-root');
   assert.equal(isPathInside(root, join(root, 'media', 'video.mp4')), true);
   assert.equal(isPathInside(root, resolve(root, '..', 'secret.txt')), false);
+});
+
+test('persists and clears the last enabled Codex skin safely', () => {
+  const root = mkdtempSync(join(tmpdir(), 'codex-skin-state-'));
+  const file = join(root, 'state.json');
+  const state = { enabled: true, id: '3030258462', fitMode: 'cover', zoom: 100 };
+  writeSavedSkinState(state, file);
+  assert.deepEqual(readSavedSkinState(file), state);
+  clearSavedSkinState(file);
+  assert.equal(existsSync(file), false);
+  assert.equal(readSavedSkinState(file), null);
+});
+
+test('disconnect keeps saved skin while explicit remove clears it', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'codex-skin-lifecycle-'));
+  const file = join(root, 'state.json');
+  const bridge = new CodexSkinBridge({ cdpPort: 1, stateFile: file, restoreIntervalMs: 60_000 });
+  bridge.active = {
+    currentId: '3030258462', panelOpacity: 0.68, scrimOpacity: 0.22,
+    blurPx: 16, muted: true, fitMode: 'cover', zoom: 100,
+    positionX: 50, positionY: 50, showControls: true,
+  };
+  bridge.persistActive();
+  bridge.disconnect();
+  assert.equal(readSavedSkinState(file)?.id, '3030258462');
+
+  const remover = new CodexSkinBridge({ cdpPort: 1, stateFile: file, restoreIntervalMs: 60_000 });
+  await remover.remove();
+  remover.disconnect();
+  assert.equal(readSavedSkinState(file), null);
 });
 
 test('falls back to an inline preview when a video exceeds the safe limit', () => {

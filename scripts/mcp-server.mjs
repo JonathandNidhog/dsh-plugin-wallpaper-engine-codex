@@ -17,7 +17,7 @@ const launcherPath = fileURLToPath(new URL('./launch-codex-with-skin.ps1', impor
 const tools = [
   {
     name: 'codex_skin_status',
-    description: 'Check Codex skin readiness, the local debug bridge, and available Wallpaper Engine source media. This does not change the desktop wallpaper.',
+    description: 'Check Codex skin readiness, persistence/auto-restore state, the local debug bridge, and available Wallpaper Engine source media. This does not change the desktop wallpaper.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
@@ -114,8 +114,9 @@ async function callTool(name, args = {}) {
       steps: [
         'Close all Codex windows so no ChatGPT.exe root process remains.',
         'Run the bundled PowerShell launcher. It starts the official installed Codex executable with --remote-debugging-port=9222.',
-        'Open a new Codex task and ask the plugin to list and apply a skin.',
+        'Open a new Codex task. The last enabled skin is restored automatically; ask the plugin to list and apply a skin only if none was saved.',
       ],
+      persistence: 'The selected skin and adjustment settings are stored under LocalAppData. codex_skin_remove deletes that saved preference.',
       security: 'The launcher does not patch or replace Codex files. The debug endpoint binds to loopback and the injected layer is removable.',
     };
   }
@@ -161,7 +162,9 @@ lines.on('line', async (line) => {
 });
 
 async function shutdown() {
-  await bridge.remove().catch(() => {});
+  // Disconnect without deleting the saved skin or removing the layer from a
+  // Codex window that is still running.
+  bridge.disconnect();
   process.exit(0);
 }
 process.on('SIGINT', shutdown);

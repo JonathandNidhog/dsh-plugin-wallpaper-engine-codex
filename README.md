@@ -17,7 +17,7 @@ The plugin discovers local Steam/Wallpaper Engine projects, safely embeds compat
 - Video switching shows an indeterminate preparation bar during transcoding and measured 0–100% progress during transfer; success turns green and failure turns red.
 - Video and frame animation pause automatically while Codex is unfocused, minimized, or hidden, then resume when Codex becomes active.
 - Transcoded files are stored under `%LOCALAPPDATA%\CodexWallpaperEngineSkin\transcoded`; source Wallpaper Engine projects are never modified.
-- The injected layer is reversible with `codex_skin_remove` and must be reapplied after restarting Codex.
+- The selected skin and adjustment settings persist under `%LOCALAPPDATA%\CodexWallpaperEngineSkin`. Ending a task no longer removes the layer, and a Codex instance started with the bundled launcher restores the last enabled skin automatically. `codex_skin_remove` removes the layer and clears the saved preference.
 
 Dynamic backgrounds are experimental: Codex's supported Appearance settings cover colors, fonts, contrast, and translucency, but do not currently provide a public background-media extension point. The plugin can also generate a native `codex-theme-v1` color-theme string as a supported fallback.
 
@@ -31,7 +31,7 @@ Install it through a local Codex marketplace, then start a new Codex task so its
 2. Run `scripts/launch-codex-with-skin.ps1`.
 3. In a new Codex task, ask to list compatible Wallpaper Engine skins and apply one.
 
-The launcher refuses to continue while Codex is already running. To use another loopback debug port, pass `-Port` to the launcher and set `CODEX_SKIN_CDP_PORT` to the same value for the plugin process.
+The launcher refuses to continue while Codex is already running. A normal Codex launch has no debug endpoint and cannot accept a dynamic skin; this remains necessary because Codex does not expose a public background-image API. To use another loopback debug port, pass `-Port` to the launcher and set `CODEX_SKIN_CDP_PORT` to the same value for the plugin process.
 
 ## Example requests
 

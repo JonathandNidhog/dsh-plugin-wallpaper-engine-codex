@@ -21,7 +21,8 @@ Use the plugin's `codex_skin` MCP tools. This plugin changes the Codex window, n
 - Small video files render inline. Videos over the compression threshold are automatically transcoded into a full-duration, hardware-friendly cached MP4 before Blob playback. Files still over the Blob limit use a decoded animation sequence, with the project preview as the final fallback.
 - Web, Scene, and Application projects use their preview image because their local files cannot be loaded safely from Codex's `app://` renderer.
 - The dynamic skin is experimental because Codex does not expose a public background-image plugin API. The launcher enables a loopback-only Chrome DevTools endpoint and does not modify installed Codex files.
-- The skin remains active while the plugin MCP process and Codex debug target remain available. A Codex restart requires reapplying it.
+- The selected skin and adjustment settings persist under LocalAppData. When Codex is launched with the bundled loopback debug launcher, the MCP bridge automatically restores the last enabled skin; ending a task must not remove it.
+- A normal Codex launch without the debug flag cannot accept a dynamic skin. If status reports the bridge unavailable, give the bundled launcher steps; after relaunch, wait for automatic restoration before asking the user to select the wallpaper again.
 - Report `renderMode`, `fallbackKind`, and `usedPreviewFallback` honestly after apply. Describe `frames` as a decoded animation sequence, not direct video playback.
 - Keep `showControls` enabled by default. Tell the user that “皮肤调整” selects a local video and controls fit mode, zoom, position, panel opacity, background scrim, and blur.
 - The controls panel stays open across a video switch. It shows indeterminate progress while preparing/transcoding, measured 0–100% progress while transferring, green on completion, and red on failure.

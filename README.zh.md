@@ -17,7 +17,7 @@
 - 切换视频时，面板会在转码准备阶段显示动态加载条，在视频传输阶段显示 0–100% 的实际进度；完成变绿，失败变红。
 - Codex 窗口失去焦点、最小化或页面隐藏时会自动暂停视频与帧动画；回到 Codex 后自动继续，减少后台 CPU/GPU 占用。
 - 压缩缓存保存在 `%LOCALAPPDATA%\CodexWallpaperEngineSkin\transcoded`，不会修改 Wallpaper Engine 原项目。
-- `codex_skin_remove` 可随时撤销皮肤；重启 Codex 后需要重新应用。
+- 当前皮肤、视频选择和调整参数会保存在 `%LOCALAPPDATA%\CodexWallpaperEngineSkin\state.json`。结束任务不会再移除皮肤；使用配套启动脚本重启 Codex 后会自动恢复。只有明确调用 `codex_skin_remove` 才会同时移除皮肤并清除保存状态。
 
 动态背景属于实验功能：Codex 官方 Appearance 设置支持颜色、字体、对比度和透明效果，但目前没有公开的背景图片/视频插件接口。插件同时提供原生 `codex-theme-v1` 配色主题生成功能作为稳定回退。
 
@@ -29,9 +29,9 @@
 
 1. 关闭所有 Codex 窗口。
 2. 运行 `scripts/launch-codex-with-skin.ps1`。
-3. 在新建的 Codex 任务里，让插件列出并应用皮肤。
+3. 在新建的 Codex 任务里，让插件列出并应用一次皮肤。以后只要仍通过该启动脚本打开 Codex，插件就会自动恢复上次皮肤和调整参数。
 
-Codex 已运行时，启动脚本会拒绝重复启动。需要更换端口时，给脚本传入 `-Port`，并把插件进程的 `CODEX_SKIN_CDP_PORT` 设为相同端口。
+Codex 已运行时，启动脚本会拒绝重复启动。直接从普通 Codex 图标启动时没有调试端口，动态皮肤无法注入；这是 Codex 当前没有公开背景图片 API 带来的限制。需要更换端口时，给脚本传入 `-Port`，并把插件进程的 `CODEX_SKIN_CDP_PORT` 设为相同端口。
 
 示例：
 

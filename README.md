@@ -1,5 +1,7 @@
 # Wallpaper Engine Skin for Codex
 
+**English** | [简体中文](README.zh.md)
+
 A Codex plugin that uses compatible media from installed Wallpaper Engine projects as the background of the Codex app itself. It does **not** change the Windows desktop wallpaper and does not require DSH or Cordis.
 
 > **Project lineage:** this Codex edition is developed from the repository's original DSH Wallpaper Engine integration. The runtime has since been rewritten specifically for Codex; the former DSH/Cordis artifacts are retained in Git history, not in the current distribution. See [NOTICE.md](NOTICE.md).

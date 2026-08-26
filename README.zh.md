@@ -1,4 +1,6 @@
-# Wallpaper Engine Skin for Codex
+# Wallpaper Engine Codex 动态皮肤插件
+
+[English](README.md) | **简体中文**
 
 这是一个给 **Codex 应用窗口换动态皮肤** 的插件。它从本机已安装的 Wallpaper Engine 项目中读取可兼容的媒体，放到 Codex 界面背后；它不会修改 Windows 桌面壁纸，也不依赖 DSH 或 Cordis。
 

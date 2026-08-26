@@ -1,18 +1,41 @@
 {
-  "name": "dsh-wallpaper-engine-codex",
-  "version": "0.1.0",
-  "description": "Use Codex to install, diagnose, and maintain the DSH Wallpaper Engine integration.",
+  "name": "dsh-plugin-wallpaper-engine-codex",
+  "version": "0.3.0+codex.20260826073856",
+  "description": "A Codex-native Wallpaper Engine skin plugin evolved from the original DSH integration.",
   "author": {
-    "name": "JonathandNidhog"
+    "name": "JonathandNidhog",
+    "url": "https://github.com/JonathandNidhog"
   },
+  "homepage": "https://github.com/JonathandNidhog/dsh-plugin-wallpaper-engine-codex",
+  "repository": "https://github.com/JonathandNidhog/dsh-plugin-wallpaper-engine-codex",
+  "license": "MIT",
+  "keywords": [
+    "wallpaper-engine",
+    "codex",
+    "skin",
+    "theme",
+    "windows"
+  ],
   "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "Dsh Wallpaper Engine Codex",
-    "shortDescription": "Manage Wallpaper Engine backgrounds for DSH.",
-    "longDescription": "Adds Codex guidance and diagnostics for installing and maintaining the dsh-plugin-wallpaper-engine-codex integration.",
+    "displayName": "Wallpaper Engine Skin for Codex",
+    "shortDescription": "Use Wallpaper Engine media as a Codex window skin.",
+    "longDescription": "Developed from the original DSH Wallpaper Engine integration and rewritten for Codex. Discovers local Wallpaper Engine projects and embeds compressed video, decoded animation frames, or project previews behind the Codex interface through a reversible local debug bridge. CDP access is restricted to the exact Codex main-page URL and excludes browser or login pages. It does not change the Windows desktop wallpaper or patch Codex application files.",
     "developerName": "JonathandNidhog",
     "category": "Productivity",
-    "capabilities": [],
-    "defaultPrompt": "Help me install, diagnose, or update Wallpaper Engine backgrounds in DSH."
+    "capabilities": [
+      "Local UI skin",
+      "Dynamic background",
+      "Reversible"
+    ],
+    "websiteURL": "https://github.com/JonathandNidhog/dsh-plugin-wallpaper-engine-codex",
+    "defaultPrompt": [
+      "Show Wallpaper Engine projects I can use as a Codex skin.",
+      "Apply a Wallpaper Engine background to this Codex window.",
+      "Remove the Codex skin and restore the normal interface.",
+      "Generate a native Codex color theme."
+    ],
+    "brandColor": "#1677FF"
   }
 }

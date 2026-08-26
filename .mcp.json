@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "codex_skin": {
+      "command": "node",
+      "args": ["./scripts/mcp-server.mjs"],
+      "cwd": "."
+    }
+  }
+}

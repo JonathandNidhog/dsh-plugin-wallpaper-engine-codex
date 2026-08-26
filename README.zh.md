@@ -21,17 +21,27 @@
 
 动态背景属于实验功能：Codex 官方 Appearance 设置支持颜色、字体、对比度和透明效果，但目前没有公开的背景图片/视频插件接口。插件同时提供原生 `codex-theme-v1` 配色主题生成功能作为稳定回退。
 
-## 本地安装与使用
+## 快速安装与使用
 
 仓库根目录就是 Codex 插件根目录。需要 Node.js 22 或更高版本；实现只用 Node.js 内置模块，无需执行 `npm install`。
 
-通过本地 Codex marketplace 安装后，新建一个任务以加载技能和 MCP 工具。动态皮肤的启动步骤：
+在 PowerShell 中粘贴下面这一行：
+
+```powershell
+$p = Join-Path $env:TEMP 'install-codex-wallpaper-skin.ps1'; Invoke-WebRequest 'https://raw.githubusercontent.com/JonathandNidhog/dsh-plugin-wallpaper-engine-codex/main/install.ps1' -OutFile $p; powershell -NoProfile -ExecutionPolicy Bypass -File $p
+```
+
+安装器会自动下载或更新仓库、注册 Codex 个人 marketplace、安装插件，并在桌面和开始菜单创建 `Codex Wallpaper Skin` 快捷方式。以后再次运行同一条命令就是升级。
+
+安装完成后：
 
 1. 关闭所有 Codex 窗口。
-2. 运行 `scripts/launch-codex-with-skin.ps1`。
+2. 点击桌面或开始菜单里的 `Codex Wallpaper Skin`。
 3. 在新建的 Codex 任务里，让插件列出并应用一次皮肤。以后只要仍通过该启动脚本打开 Codex，插件就会自动恢复上次皮肤和调整参数。
 
 Codex 已运行时，启动脚本会拒绝重复启动。直接从普通 Codex 图标启动时没有调试端口，动态皮肤无法注入；这是 Codex 当前没有公开背景图片 API 带来的限制。需要更换端口时，给脚本传入 `-Port`，并把插件进程的 `CODEX_SKIN_CDP_PORT` 设为相同端口。
+
+开发者也可以克隆仓库，通过本地 Codex marketplace 手动安装，再直接运行 `scripts/launch-codex-with-skin.ps1`。
 
 示例：
 
@@ -56,6 +66,7 @@ npm run verify
 | --- | --- |
 | `.codex-plugin/plugin.json` | Codex 插件清单 |
 | `.mcp.json` | 本地 MCP 服务注册 |
+| `install.ps1` | 面向普通用户的一键安装与升级脚本 |
 | `skills/wallpaper-engine/` | Codex 技能流程与安全规则 |
 | `scripts/mcp-server.mjs` | MCP 工具服务 |
 | `scripts/*.ps1` | Codex 启动、视频压缩与帧动画回退 |

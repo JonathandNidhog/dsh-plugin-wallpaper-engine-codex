@@ -21,17 +21,27 @@ The plugin discovers local Steam/Wallpaper Engine projects, safely embeds compat
 
 Dynamic backgrounds are experimental: Codex's supported Appearance settings cover colors, fonts, contrast, and translucency, but do not currently provide a public background-media extension point. The plugin can also generate a native `codex-theme-v1` color-theme string as a supported fallback.
 
-## Local development and installation
+## Quick install and usage
 
 This repository is the plugin root. It requires Node.js 22 or newer and only uses Node.js built-ins, so `npm install` is unnecessary.
 
-Install it through a local Codex marketplace, then start a new Codex task so its skill and MCP tools are loaded. For dynamic skins:
+Paste this line into PowerShell:
+
+```powershell
+$p = Join-Path $env:TEMP 'install-codex-wallpaper-skin.ps1'; Invoke-WebRequest 'https://raw.githubusercontent.com/JonathandNidhog/dsh-plugin-wallpaper-engine-codex/main/install.ps1' -OutFile $p; powershell -NoProfile -ExecutionPolicy Bypass -File $p
+```
+
+The installer downloads or updates the repository, registers the personal Codex marketplace entry, installs the plugin, and creates a `Codex Wallpaper Skin` shortcut on the desktop and Start menu. Run the same command again later to update.
+
+After installation:
 
 1. Close every Codex window.
-2. Run `scripts/launch-codex-with-skin.ps1`.
+2. Launch `Codex Wallpaper Skin` from the desktop or Start menu.
 3. In a new Codex task, ask to list compatible Wallpaper Engine skins and apply one.
 
 The launcher refuses to continue while Codex is already running. A normal Codex launch has no debug endpoint and cannot accept a dynamic skin; this remains necessary because Codex does not expose a public background-image API. To use another loopback debug port, pass `-Port` to the launcher and set `CODEX_SKIN_CDP_PORT` to the same value for the plugin process.
+
+Developers can also clone the repository, register it in a local Codex marketplace manually, and run `scripts/launch-codex-with-skin.ps1` directly.
 
 ## Example requests
 
@@ -56,6 +66,7 @@ The MCP server communicates through JSON-RPC over stdio. Wallpaper Engine projec
 | --- | --- |
 | `.codex-plugin/plugin.json` | Codex plugin manifest |
 | `.mcp.json` | Local MCP server registration |
+| `install.ps1` | One-command installer and updater for end users |
 | `skills/wallpaper-engine/` | Codex skill workflow and safety rules |
 | `scripts/mcp-server.mjs` | MCP tool server |
 | `scripts/*.ps1` | Codex launcher, video transcoding, and frame fallback |

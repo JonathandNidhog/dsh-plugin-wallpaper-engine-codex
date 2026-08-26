@@ -6,6 +6,7 @@
   "files": [
     ".codex-plugin/",
     ".mcp.json",
+    "install.ps1",
     "scripts/",
     "skills/",
     "src/",
